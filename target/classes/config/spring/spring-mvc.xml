@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+    xmlns:mvc="http://www.springframework.org/schema/mvc"
+    xmlns:context="http://www.springframework.org/schema/context"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:tx="http://www.springframework.org/schema/tx"
+    xmlns:jee="http://www.springframework.org/schema/jee"
+    xmlns:aop="http://www.springframework.org/schema/aop"
+    xsi:schemaLocation="http://www.springframework.org/schema/beans   
+    http://www.springframework.org/schema/beans/spring-beans.xsd
+    http://www.springframework.org/schema/context   
+    http://www.springframework.org/schema/context/spring-context.xsd
+    http://www.springframework.org/schema/mvc
+    http://www.springframework.org/schema/mvc/spring-mvc.xsd
+    http://www.springframework.org/schema/tx
+    http://www.springframework.org/schema/tx/spring-tx.xsd
+    http://www.springframework.org/schema/jee
+    http://www.springframework.org/schema/jee/spring-jee.xsd
+    http://www.springframework.org/schema/aop
+    http://www.springframework.org/schema/aop/spring-aop.xsd">
+    
+   	<aop:aspectj-autoproxy/>
+    <bean id="UbuntuOracle12c" class="org.springframework.jndi.JndiObjectFactoryBean">
+    	<property name="jndiName" value="java:comp/env/jdbc/UbuntuOracle12c"/>
+    </bean>
+    		
+    <!-- tx = Transaction -->
+    <!-- Component-scan base package -->
+    <context:component-scan base-package="hanacard"/>
+    <!-- 객체 생성과 관련된 Component, Service 등을 쓰기 위한 설정 -->
+    <mvc:annotation-driven>
+    	<!--  요청 본문에서 메시지를 읽어 들이거나(@RequestBody), 응답 본문에 메시지를 작성할 때(@ResponseBody) 사용한다. -->
+    	<mvc:message-converters>
+    		<bean class="org.springframework.http.converter.json.MappingJackson2HttpMessageConverter">
+    			<property name="supportedMediaTypes">
+    				<list>
+    					<value>text/html; charset=utf-8</value>
+    					<value>application/json; charset=utf-8</value>
+    				</list>
+    			</property>
+    		</bean>
+    		<bean class="org.springframework.http.converter.StringHttpMessageConverter">
+    			<property name="supportedMediaTypes">
+    				<list>
+    					<value>text/html; charset=UTF-8</value>
+    				</list>
+    			</property>
+    		</bean>
+    	</mvc:message-converters>
+    </mvc:annotation-driven>
+    
+    <!-- Mybatis Config -->
+    <bean id="dataSource" class="org.apache.commons.dbcp.BasicDataSource" destroy-method="close">
+    	<property name="driverClassName" value="oracle.jdbc.driver.OracleDriver"/>
+	    <property name="url" value="jdbc:oracle:thin:@192.168.88.128:1521:ORCLCDB"/>
+    	<property name="username" value="ujwso"/>
+    	<property name="password" value="1111"/>
+<!--    <property name="url" value="jdbc:oracle:thin:@192.168.0.137:1521:WinOracle12c"/>
+    	<property name="username" value="jwso"/>
+    	<property name="password" value="1111"/> -->
+    </bean>
+    
+    <bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+    	<property name="dataSource" ref="dataSource"/>
+    	<property name="configLocation" value="classpath:config/mybatis/sqlMapConfig.xml"/>
+    	<property name="mapperLocations" value="classpath:config/sqlmap/oracle/*.xml"/>
+    </bean>    
+
+    <bean id="sqlSessionTemplate" class="org.mybatis.spring.SqlSessionTemplate">
+    	<constructor-arg ref="sqlSessionFactory"/>
+    </bean>
+	<mvc:default-servlet-handler />
+	
+	<!-- 로그인 인터셉터 -->
+	<!--
+	/board에만 이런식으로 쓸 수 있는데, /**는 슬러시 밑에 모두에 해당 . 
+	RequestMapping의 uri가 호출되기 전에 호출되는 것이 prehandle() (시점을 잘 기억하자)
+	postHandle()은 RequestMapping의 메소드가 끝난 후 실행된다.
+	afterCompletion()은 응답이 다 완료된 후에 호출된다.
+	즉 이런 시점에 코드 주입이 일어날 수 있다~! 
+	-->	
+	 <!--    
+	 / 뒤의 Depth와 상관없이 다 들어가도록.
+	  근데 이렇게 하면, 로그인화면에서는 재귀함수처럼 로그인 안됬나?
+	 ->로그인으로 보내는 것이 반복되서 페이지가 동작을 멈춘다.
+	  그래서 ~는 제외하고 싶다 라는 것으로 exclude-mapping을 사용할 수 있다. 
+	 -->
+					
+	<bean class="hanacard.interceptor.LoginInterceptor" id="LoginInterceptor"/>
+	<mvc:interceptors>
+		<mvc:interceptor>									
+			
+			<mvc:mapping path="/**/"/>
+			<mvc:exclude-mapping path="/resources/**"/>	
+			<mvc:exclude-mapping path="/login"/>
+			<mvc:exclude-mapping path="/logout"/>			
+			<mvc:exclude-mapping path="/clientLogin"/>
+			<mvc:exclude-mapping path="/clientLogout"/>
+			<mvc:exclude-mapping path="/mailingService"/>
+			<mvc:exclude-mapping path="/selectPayingHistory/**"/>
+			<mvc:exclude-mapping path="/selectPaidBetweenMonth/**"/>
+			<mvc:exclude-mapping path="/selectMajorUseBusiness/**"/>
+			<mvc:exclude-mapping path="/selectClusterUsedCard/**"/>
+			<ref bean="LoginInterceptor"/>
+		</mvc:interceptor>
+	</mvc:interceptors>
+
+    <!-- 트랜잭션 처리 -->
+    <bean class="org.springframework.jdbc.datasource.DataSourceTransactionManager" id="transactionManager">
+    	<property name="dataSource" ref="dataSource"/>
+    </bean>
+    <tx:annotation-driven transaction-manager="transactionManager"/>
+    
+    <!-- 요청은 서블릿이 받으면 jsp가 응답할 것이기 때문에, suffix를 .jsp로 설정
+    	  그래서 쓰지 않아도 되고, WEB-INF 밑에 만들꺼니까 외부에서 .jsp파일 접근 불가
+    	  단, 이미지 같은 것들은 외부로 꺼내야함 
+    -->
+    <mvc:view-resolvers>
+    	<mvc:jsp prefix="/WEB-INF/jsp/" suffix=".jsp"/>
+    </mvc:view-resolvers>
+    
+    <!-- Gmail -->
+    <bean id="mailSender" class="org.springframework.mail.javamail.JavaMailSenderImpl">
+    	<property name="host" value="smtp.gmail.com"/>
+    	<property name="port" value="587"/>
+    	<property name="username" value="hageumti@gmail.com"/>
+    	<property name="password" value="hanahana"/>
+    	<property name="javaMailProperties">
+    	<props>
+    		<prop key="mail.smtp.auth">true</prop>
+    		<prop key="mail.smtp.starttls.enable">true</prop>
+    		<prop key="mail.smtps.ssl.trust">smtp.gmail.com</prop>
+    	</props>
+    	</property>
+    </bean>
+   		 
+</beans>

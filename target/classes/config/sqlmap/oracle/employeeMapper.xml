@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper
+    PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="EmployeeDAO">
+
+	<resultMap type="employeeVO" id="employeeMap">
+		<result column="dept_no" property="deptNo"/>
+		<result column="reg_date" property="regDate"/>
+	</resultMap>
+
+	<select id="login" parameterType="employeeVO" resultType="employeeVO">
+		SELECT empno, ename, dept_code, pw
+		FROM emp
+		WHERE empno = #{empno} AND pw = #{pw}
+	</select>
+</mapper>

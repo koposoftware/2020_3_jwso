@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "Http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="dashboard.dao.ClusterPageDAO">
+		
+	<resultMap type="ClusterVO" id="selectClusterRadarMap">
+		<result column="cluster_no" 		property="clusterNo"/>
+		<result column="code_info"			property="codeInfo"/>
+		<result column="use_cnt"			property="useCnt"/>
+		<result column="max_cnt"			property="maxCnt"/>
+		<result column="pop"				property="population"/>
+		<result column="avg_monthly_income" property="avgMonthlyIncome"/>
+		<result column="avg_inst"			property="avgInst"/>
+		<result column="avg_payment"		property="avgPayment"/>
+		<result column="avg_age"			property="avgAge"/>
+		<result column="card_name"			property="cardName"/>
+		<result column="card_usage_cnt"		property="cardUsageCnt"/>
+	</resultMap>
+
+	<select id="selectClusterRadar" resultMap="selectClusterRadarMap">
+		select a.cluster_no, a.code_info, a.use_cnt, b.max_cnt
+			from cluster_use_business A,
+		(
+		select code_info, max(use_cnt) as max_cnt from cluster_use_business
+			group by code_info
+		) B
+		where a.code_info = b.code_info
+		order by cluster_no asc, code_info asc
+	</select>
+	
+	<select id="selectClusterExplain" resultMap="selectClusterRadarMap">
+		select cluster_no, population as pop, avg_monthly_income,
+			   avg_inst, avg_payment, avg_age, card_name, card_usage_cnt
+			from cluster_basic_statistics
+	</select>
+	
+</mapper>

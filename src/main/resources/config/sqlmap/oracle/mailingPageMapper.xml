@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "Http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="mailing.dao.MailingDAO">
+
+	<resultMap type="MailingVO" id="selectMajorUseBusinessMap">
+		<result column="code_info"	 property="businessInfo"/>
+		<result column="sum_payment" property="sumPayment"/>
+	</resultMap>
+	
+	<resultMap type="MailingVO" id="selectClusterUsedCardMap">
+		<result column="card_name"		property="cardName"/>
+		<result column="card_used_cnt"	property="cardUsedCnt"/>
+	</resultMap>
+	
+	<resultMap type="MailingVO" id="selectPaidBetweenMonthMap"> 
+		<result column="sum_this_last_age_group" property="sumThisLastAgeGroup"/>
+	</resultMap>
+	
+	<resultMap type="MailingVO" id="selectPayingHistoryMap">
+		<result column="transaction_date" property="transactionDate"/>
+		<result column="card_name"		  property="usingCardName"/>
+		<result column="payment_area" 	  property="paymentArea"/>
+		<result column="business_type"	  property="businessType"/>
+		<result column="daily_payment"    property="dailyPayment"/>
+		<result column="inst_plan"		  property="instPlan"/>
+		<result column="remain_inst"	  property="remainInst"/>
+	</resultMap>
+	
+	<select id="selectMajorUseBusiness" parameterType="String" resultMap="selectMajorUseBusinessMap">
+     select code_info, sum_payment
+        from (
+        	select b.code_info, trunc(sum(a.payment)) AS sum_payment
+            	from fact_payment_hist a, code_tbl b
+            	where a.cid = #{cid}
+                    and transaction_date between trunc(add_months(sysdate, -1), 'MM') and LAST_DAY(add_months(sysdate, -1))
+                    and to_char(a.business_code) = to_char(b.code)
+            	group by b.code_info
+            	order by sum_payment desc
+        <![CDATA[
+        ) where rownum <= 6
+        ]]>
+	</select>
+	
+	<select id = "selectClusterUsedCard" parameterType="String" resultMap="selectClusterUsedCardMap">
+	select card_name, card_used_cnt  
+	from (
+    	select code_info as card_name, card_used_cnt
+    		from (
+		        select card_code, count(card_code) as card_used_cnt
+		            from dim_client a, fact_payment_hist b
+		            where a.cid = b.cid
+		                and transaction_date between trunc(add_months(sysdate, -1), 'MM') and LAST_DAY(add_months(sysdate, -1))
+		                and a.cluster_no =  (select cluster_no from dim_client where cid = #{cid})
+		            group by card_code        
+		        ) s inner join code_tbl x
+		        on to_char(s.card_code) = to_char(x.code)
+		        order by card_used_cnt desc
+        <![CDATA[
+		) where rownum <= 5
+		]]>
+	</select>
+
+	
+	<select id="selectPaidBetweenMonth" parameterType="UserVO" resultMap="selectPaidBetweenMonthMap">
+	select sum(payment) as sum_this_last_age_group
+		from fact_payment_hist
+		where cid = #{cid} and transaction_date between (add_months(sysdate, -1)) and LAST_DAY(add_months(sysdate, -1))
+		group by cid
+	union all
+	select sum(payment) as sum_paying_last_month
+		from fact_payment_hist 
+		where cid = #{cid}
+	    and transaction_date between (add_months(sysdate, -2)) and LAST_DAY(add_months(sysdate, -2))
+	group by cid
+	union all
+	select trunc(avg(payment))
+    	from fact_payment_hist a, dim_client b
+    	where a.cid = b.cid 
+        	and b.age_group = #{ageGroup} and b.gender = #{gender}
+        	and transaction_date between (add_months(sysdate, -1)) and LAST_DAY(add_months(sysdate, -1))
+	</select>
+	
+	<select id="selectPayingHistory" parameterType="String" resultMap="selectPayingHistoryMap">	
+	select to_char(transaction_date, 'yyyy-mm-dd') as transaction_date, card_name, payment_area, code_info as business_type, payment as daily_payment, inst_plan
+	from (
+	    select transaction_date, card_name, business_code, code_info as payment_area, payment, inst_plan
+	    from (
+	        select transaction_date, code_info as card_name, business_code, payment_area, payment, inst_plan
+	            from (
+	                select transaction_date, card_code, business_code, payment_area, payment, inst_plan
+	                    from fact_payment_hist a
+	                    where cid = #{cid} and transaction_date between (add_months(sysdate, -1)) and LAST_DAY(add_months(sysdate, -1))
+	            ) x inner join code_tbl s
+	             on to_char(x.card_code) = to_char(s.code)
+	        ) z inner join code_tbl f
+	         on to_char(z.payment_area) = to_char(f.code)
+	    ) g inner join code_tbl h 
+	     on to_char(g.business_code) = to_char(h.code)
+	     order by transaction_date desc
+	</select>
+	
+	<select id="selectRemainHistory" parameterType="String" resultMap="selectPayingHistoryMap">
+	
+	select transaction_date, card_name, payment_area, code_info as business_type, daily_payment, inst_plan, remain_inst
+	from (
+    	select transaction_date, card_name, code_info as payment_area, business_code, payment as daily_payment, inst_plan, remain_inst
+    	from (
+        	select to_char(transaction_date, 'yyyy-mm-dd') as transaction_date, code_info as card_name, payment_area, business_code, payment, 
+               	   inst_plan, (inst_plan - (extract(month from sysdate) - extract(month from transaction_date))) as remain_inst
+            	from fact_payment_hist a, code_tbl b
+            	<![CDATA[
+            	where transaction_date <= trunc(add_months(sysdate, -1), 'MM') - 1
+            	]]>
+            		and inst_plan != 0
+            	<![CDATA[
+            		and (inst_plan - (extract(month from sysdate) - extract(month from transaction_date))) >= 0 
+            	]]>
+            		and cid = #{cid}
+            		and to_char(a.card_code) = to_char(b.code)
+        	) c, code_tbl d where to_char(payment_area) = to_char(d.code)
+    	) x, code_tbl s where to_char(x.business_code) = to_char(s.code)
+    	order by transaction_date desc
+	</select>
+	
+	<select id="selectUserVO" parameterType="UserVO" resultType="UserVO">
+	select cid, gender, age_group as ageGroup, cluster_no as clusterNo, pw, to_char(reg_date, 'yyyy-mm-dd') as regDate,
+		   trunc(sysdate - to_date(to_char(reg_date, 'yyyy-mm-dd'), 'yyyy-mm-dd')) as regPeriod
+		from dim_client
+		where cid = #{cid} and pw = #{pw}
+	</select>
+
+</mapper>

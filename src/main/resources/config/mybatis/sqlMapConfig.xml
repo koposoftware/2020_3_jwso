@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE configuration
+  PUBLIC "-//mybatis.org//DTD Config 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-config.dtd">
+  
+ <configuration>
+	<typeAliases>
+		<typeAlias type="hanacard.employee.vo.EmployeeVO" alias="EmployeeVO"/>
+		<typeAlias type="hanacard.dashboard.vo.LoansVO" alias="LoansVO"/>
+		<typeAlias type="hanacard.dashboard.vo.DefaultVO" alias="DefaultVO"/>
+		<typeAlias type="hanacard.dashboard.vo.PaymentVO" alias="PaymentVO"/>
+		<typeAlias type="hanacard.dashboard.vo.ClientVO" alias="ClientVO"/>
+		<typeAlias type="hanacard.dashboard.vo.ClusterVO" alias="ClusterVO"/>
+		<typeAlias type="hanacard.mailing.vo.MailingVO" alias="MailingVO"/>
+		<typeAlias type="hanacard.memo.vo.MemoVO" alias="MemoVO"/>
+		<typeAlias type="hanacard.mailing.vo.UserVO" alias="UserVO"/>
+	</typeAliases>
+</configuration>

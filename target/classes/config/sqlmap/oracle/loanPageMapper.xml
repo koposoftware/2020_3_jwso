@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "Http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="dashboard.dao.LoansPageDAO">
+
+	<resultMap type="LoansVO" id="LoansMap">
+		<result column="loan_date" 			property="loanDate"/>
+		<result column="revolving_Sum" 		property="revolvingSum"/>
+		<result column="revolving_Cnt" 		property="revolvingCnt"/>
+		<result column="shortTermLoans_Sum" property="shortTermLoansSum"/>
+		<result column="shortTermLoans_Cnt" property="shortTermLoansCnt"/>
+		<result column="longTermLoans_Sum"  property="longTermLoansSum"/>
+		<result column="longTermLoans_Cnt"  property="longTermLoansCnt"/>
+		<result column="client_id"			property="cid"/>
+		<result column="loan_clf"			property="loanClf"/>
+		<result column="loan"				property="loans"/>
+		<result column="loan_due_date" 		property="loanDueDate"/>
+		<result column="loan_balance"  		property="loanBalance"/>
+	</resultMap>
+	
+	<resultMap type="DefaultVO" id="DefaultMap">
+		<result column="default_date"		property="defaultDate"/>
+		<result column="default_cnt"		property="defaultCnt"/>	
+	</resultMap>
+	
+	<select id="selectLoansData" resultMap="LoansMap">
+		select *
+		    from (select to_char(loan_date, 'yyyy-mm-dd') as loan_date, loan_code, loan from fact_loans where loan_date between sysdate - 8 and sysdate - 1)
+		pivot
+		(
+		sum(loan) AS SUM, count(loan) AS CNT
+		for loan_code
+		in (3001 AS revolving, 3002 as shortTermLoans, 3003 as longTermLoans)
+		)
+		order by loan_date asc
+	</select>
+	
+	<select id="selectDefaultCnt" resultMap="DefaultMap">
+		select to_char(default_date, 'yyyy-mm-dd') AS default_date, count(*) as default_cnt
+    		 from fact_default
+     		where default_date between sysdate - 8 and sysdate - 1
+		group by default_date
+		order by default_date asc
+	</select>
+
+	
+	<select id="selectDueDateClient" resultMap="LoansMap">
+	select cid as client_id, code_info as loan_clf, loan_date, loan, loan_due_date, loan_balance
+		from (
+		    select cid, loan_code, to_char(loan_date, 'yyyy-mm-dd') as loan_date, loan, to_char(loan_due_date, 'yyyy-mm-dd') as loan_due_date, loan_balance
+		    from fact_loans
+		    where loan_due_date between sysdate - 8 and sysdate - 1
+		        and loan_code in (3002, 3003)
+		) a inner join code_tbl b
+		    on to_char(a.loan_code) = to_char(b.code)
+		    order by loan_due_date desc, loan_date asc
+	</select>
+
+</mapper>

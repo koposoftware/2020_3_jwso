@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "Http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="memo.dao.MemoDAO">
+
+	<parameterMap type="MemoVO" id="MemoParamMap">
+		<parameter property="no"/>
+		<parameter property="empno"/>
+		<parameter property="memoDate"/>
+		<parameter property="memo"/>
+	</parameterMap>
+
+	<insert id="insertMemo" parameterMap="MemoParamMap">
+	insert into memo (empno, memo) values (#{empno}, #{memo})
+	</insert>
+	
+	<select id="selectMemo" resultType="MemoVO">
+	select no, to_char(memo_date, 'YYYY-MM-DD HH24:MI:SS') as memoDate, memo
+		from memo
+		where empno = #{empno}
+		order by memoDate desc
+	</select>
+	
+	<delete id="deleteMemo" parameterType="java.util.List">
+	delete from memo
+	where no in 
+	<foreach collection="list" item="item" separator="," open="(" close=")">
+    	#{item}
+	</foreach>
+	
+	</delete>
+</mapper>

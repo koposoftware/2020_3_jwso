@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<Configuration status="WARN">
+	<Appenders>
+		<Console name="console" target="SYSTEM_OUT">
+			<PatternLayout charset="UTF-8" pattern="%d [%t] %-5level %logger{36} -%msg%n"/>
+		</Console>
+	
+		<JDBC name="databaseAppender" tableName="LOG_TBL">
+			<DataSource jndiName="java:comp/env/jdbc/UbuntuOracle12c"/>
+			<Column name="no"				literal="SEQ_LOG.NEXTVAL"/>
+			<Column name="log_date"   		pattern="%X{log_date}" />
+			<Column name="log_level"  	 	pattern="%X{log_level}"/>
+			<Column name="package_class" 	pattern="%X{package_class}"/>
+			<Column name="method_name" 		pattern="%X{method_name}"/>
+			<Column name="params" 			pattern="%X{params}"/>
+			<Column name="processing_time" 	pattern="%X{processing_time}"/>
+		</JDBC>
+	</Appenders>
+	
+	<Loggers>
+		<!-- 모든 로그는 debug 레벨 이상일 때만 -->
+		<Root level="debug" additivity="false">
+			<appender-ref ref="console"/>
+		</Root>
+	
+		<!-- warn 수준 이상만 -->
+		<Logger name="org.springframework" level="warn" additivity="false" >
+			<appender-ref ref="console"/>
+			<appender-ref ref="databaseAppender"/>
+		</Logger>
+		
+		<Logger name="org.apache.http" level="warn" additivity="false">
+			<appender-ref ref="console"/>
+			<appender-ref ref="databaseAppender"/>
+		</Logger>
+		
+		<!-- 내 패키지는 무조건 -->
+		<Logger name="hanacard.aop.logger.LogAdvice" level="debug" additivity="false">
+			<appender-ref ref="console"/>
+			<appender-ref ref="databaseAppender"/>
+		</Logger>
+	</Loggers>
+</Configuration>

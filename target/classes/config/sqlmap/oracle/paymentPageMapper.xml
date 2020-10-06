@@ -1,0 +1,207 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "Http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="dashboard.dao.PaymentPageDAO">
+
+	<resultMap type="ClientVO" id="ClientMap">
+		<result column="addr_code"			property="addrCode"/>
+		<result column="cluster_no"			property="clusterNo"/>
+		<result column="age_group" 			property="ageGroup"/>
+		<result column="monthly_income" 	property="monthlyIncome"/>
+	</resultMap>
+	
+	<resultMap type="PaymentVO" id="PaymentMap">
+		<result column="transaction_date"	property="transactionDate"/>
+		<result column="sum_payment"		property="paymentSum"/>
+	</resultMap>
+	
+	<resultMap type="PaymentVO" id="PaymentClfMap">
+		<result column="tot_cnt"		property="totCnt"/>
+		<result column="online_cnt"		property="onlineCnt"/>
+		<result column="inst_cnt"		property="instCnt"/>
+		<result column="dom_cnt"		property="domCnt"/>
+	</resultMap>
+	
+	<resultMap type="PaymentVO" id="PaymentCardCntMap">
+		<result column="card_paid_cnt"	property="cardPaidCnt"/>
+		<result column="card_name"		property="cardName"/>
+	</resultMap>
+	
+	<resultMap type="PaymentVO" id="paidSumByAgeMap">
+		<result column="by_groups"	    property="groups"/>
+		<result column="paid_sum"		property="paidSum"/>
+	</resultMap>
+	
+	<resultMap type="PaymentVO" id="cntBusinessMap">
+		<result column="use_cnt"	    property="useCnt"/>
+		<result column="code_info"		property="codeInfo"/>
+	</resultMap>
+	
+	<resultMap type="PaymentVO" id="sumByRegionMap">
+		<result column="payment_area"	property="paymentArea"/>
+		<result column="sum_payment"	property="sumPayment"/>
+		<result column="week_cnt"		property="weekCnt"/>
+	</resultMap>
+	
+	<resultMap type="ClientVO" id="YesterdayMap">
+		<result column="yes_tot_cnt"	 property="totCnt"/>
+		<result column="yes_female_cnt"  property="femaleCnt"/>
+		<result column="yes_male_cnt"	 property="maleCnt"/>
+		<result column="yes_age_group20" property="group20Cnt"/>
+		<result column="yes_age_group30" property="group30Cnt"/>
+		<result column="yes_age_group40" property="group40Cnt"/>
+		<result column="yes_age_group50" property="group50Cnt"/>
+		<result column="yes_age_group60" property="group60Cnt"/>
+		<result column="yes_age_group70" property="group70Cnt"/>
+	</resultMap>
+	
+	<resultMap id="selectTopCardMap" type="paymentVO">
+		<result column="top_online"		  property="topOnline"/>
+		<result column="top_offline"	  property="topOffline"/>
+		<result column="top_inst"		  property="topInst"/>
+		<result column="top_lumb_sum"	  property="topLumbSum"/>
+		<result column="top_dom"		  property="topDom"/>
+		<result column="top_overseas"	  property="topOverseas"/>
+		<result column="max_online_cnt"	  property="maxOnlineCnt"/>
+		<result column="max_offline_cnt"  property="maxOfflineCnt"/>
+		<result column="max_inst_cnt"	  property="maxInstCnt"/>
+		<result column="max_lumb_sum_cnt" property="maxLumbSumCnt"/>
+		<result column="max_dom_cnt"	  property="maxDomCnt"/>
+		<result column="max_overseas_cnt" property="maxOverseasCnt"/>
+
+	</resultMap>
+	
+	<select id="selectClientCnt" resultType="ClientVO">
+		select (select count(*) from dim_client) as totCnt,
+			   (select count(*) from dim_client where gender = 1) as maleCnt,
+			   (select count(*) from dim_client where gender = 0) as femaleCnt,
+			   (select count(*) from dim_client where age_group = 20) as group20Cnt,
+			   (select count(*) from dim_client where age_group = 30) as group30Cnt,
+			   (select count(*) from dim_client where age_group = 40) as group40Cnt,
+			   (select count(*) from dim_client where age_group = 50) as group50Cnt,
+			   (select count(*) from dim_client where age_group = 60) as group60Cnt,
+			   (select count(*) from dim_client where age_group = 70) as group70Cnt	
+		from dim_client
+		group by 1
+	</select>
+	
+	<select id="selectYesterdayClientCnt" resultMap="YesterdayMap">
+	select (select count(*) from dim_client where reg_date = to_char(sysdate-1, 'yyyy-mm-dd')) as yes_tot_cnt,
+       (select count(*) from dim_client where reg_date = to_char(sysdate-1, 'yyyy-mm-dd') and gender = 0) as yes_female_cnt,
+       (select count(*) from dim_client where reg_date = to_char(sysdate-1, 'yyyy-mm-dd') and gender = 1) as yes_male_cnt,
+       (select count(*) from dim_client where reg_date = to_char(sysdate-1, 'yyyy-mm-dd') and age_group = 20) as yes_age_group20,
+       (select count(*) from dim_client where reg_date = to_char(sysdate-1, 'yyyy-mm-dd') and age_group = 30) as yes_age_group30,
+       (select count(*) from dim_client where reg_date = to_char(sysdate-1, 'yyyy-mm-dd') and age_group = 40) as yes_age_group40,
+       (select count(*) from dim_client where reg_date = to_char(sysdate-1, 'yyyy-mm-dd') and age_group = 50) as yes_age_group50,
+       (select count(*) from dim_client where reg_date = to_char(sysdate-1, 'yyyy-mm-dd') and age_group = 60) as yes_age_group60,
+       (select count(*) from dim_client where reg_date = to_char(sysdate-1, 'yyyy-mm-dd') and age_group = 70) as yes_age_group70
+	from dual
+	</select>
+	
+	<select id="selectPayment" resultMap="PaymentMap">
+		select to_char(transaction_date, 'yyyy-mm-dd') AS transaction_date, SUM(payment) AS sum_payment
+    		from fact_payment_hist
+   		 	where transaction_date between sysdate-15 and sysdate-1
+    		group by transaction_date
+    		order by transaction_date asc
+	</select>
+	<!-- transaction_date에 인덱스를 걸어줌으로서 5초->4초로 20% 성능 개선. -->
+	<select id="selectPaymentClf" resultMap="PaymentClfMap">
+	select count(*) as tot_cnt,
+	       count(decode(on_offline_code, 4000, 1)) as online_cnt,
+	       count(decode(payment_typecode, 4002, 1))  as inst_cnt,
+		   count(decode(dom_overseas_code, 4004, 1)) as dom_cnt
+	from fact_payment_hist 
+	where transaction_date between sysdate-8 and sysdate-1
+	group by 1
+	</select>
+	
+	<select id="selectCardCnt" resultMap="PaymentCardCntMap">	
+		select * 
+		from (
+			select A.card_paid_cnt, B.card_name 
+					from (
+			       			select count(*) as card_paid_cnt, card_code
+			       			from fact_payment_hist
+			        		where transaction_date = to_char(sysdate-1, 'yyyy-mm-dd')
+			        		group by card_code
+					) A inner join dim_card B
+			on A.card_code = b.card_code
+			order by A.card_paid_cnt desc
+	   	)
+	   	<![CDATA[
+	   	where rownum <= 5
+		]]>
+	</select>
+	
+	<select id="paidSumByAge" resultMap="paidSumByAgeMap">
+	select A.age_group||'대' AS by_groups , sum(B.payment) as paid_sum
+		from dim_client A inner join fact_payment_hist B
+		on A.cid = B.cid
+		where transaction_date = to_char(sysdate-1, 'yyyy-mm-dd')
+		group by A.age_group
+		order by age_group asc
+	</select>
+
+	<select id="cntBusiness" resultMap="cntBusinessMap">
+	select use_cnt, code_info 
+		from(
+  			select * from (
+        		select count(*) AS use_cnt, business_code
+        		from fact_payment_hist
+        		where transaction_date = to_char(sysdate-1, 'yyyy-mm-dd')
+        		group by business_code
+        		order by use_cnt desc
+        <![CDATA[
+   		) where rownum <= 6
+   		]]>
+		) 
+		A inner join code_tbl B
+      		on to_char(A.business_code) = B.code
+       		order by use_cnt desc
+	</select>
+		
+	<select id="sumByRegion" resultMap="sumByRegionMap">
+		select code_info as payment_area, sum_payment, week_cnt
+			from (
+			    select payment_area, sum(payment)/100 as sum_payment, sum(1) as week_cnt
+			        from fact_payment_hist where transaction_date = to_char(sysdate-1, 'yyyy-mm-dd')
+			        group by payment_area
+			    ) a inner join code_tbl b 
+			    on to_char(a.payment_area) = to_char(b.code)
+			    order by sum_payment
+	</select>
+	
+
+	<select id="selectTopCard" resultMap="selectTopCardMap">
+	select MIN((decode(online_rank, 1, code_info)))   as top_online,   MAX(online_cnt)   as max_online_cnt,
+	       MIN((decode(offline_rank, 1, code_info)))  as top_offline,  MAX(offline_cnt)  as max_offline_cnt,
+	       MIN((decode(inst_rank, 1, code_info)))     as top_inst,     MAX(inst_cnt)     as max_inst_cnt,
+	       MIN((decode(lumb_sum_rank, 1, code_info))) as top_lumb_sum, MAX(lumb_sum_cnt) as max_lumb_sum_cnt,
+	       MIN((decode(dom_rank, 1, code_info)))      as top_dom,      MAX(dom_cnt)      as max_dom_cnt,
+	       MIN((decode(overseas_rank, 1, code_info))) as top_overseas, MAX(overseas_cnt) as max_overseas_cnt
+	    from (
+	    select code_info, online_cnt,   ROW_NUMBER() OVER (order by online_cnt)   as online_rank,
+	                      offline_cnt,  ROW_NUMBER() OVER (order by offline_cnt)  as offline_rank,
+	                      inst_cnt,     ROW_NUMBER() OVER (order by inst_cnt)     as inst_rank,
+	                      lumb_sum_cnt, ROW_NUMBER() OVER (order by lumb_sum_cnt) as lumb_sum_rank, 
+	                      dom_cnt,      ROW_NUMBER() OVER (order by dom_cnt)      as dom_rank,
+	                      overseas_cnt, ROW_NUMBER() OVER (order by overseas_cnt) as overseas_rank
+	    from (
+	        select code_info, count(decode(on_offline_code, 4000, 1))   as online_cnt,
+	                          count(decode(on_offline_code, 4001, 1))   as offline_cnt,
+	                          count(decode(payment_typecode, 4002, 1))  as inst_cnt,
+	                          count(decode(payment_typecode, 4003, 1))  as lumb_sum_cnt,
+	                          count(decode(dom_overseas_code, 4004, 1)) as dom_cnt,
+	                          count(decode(dom_overseas_code, 4005, 1)) as overseas_cnt
+	        from fact_payment_hist a, code_tbl b
+	        where transaction_date = to_char(sysdate-1, 'yyyy-mm-dd')
+	            and to_char(a.card_code) = to_char(b.code)
+	        group by code_info
+	    ) 
+	)
+	</select>
+</mapper>
