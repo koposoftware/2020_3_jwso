@@ -14,12 +14,12 @@
 
 # 2. 프로젝트 목표
 
-   <img src="goal.jpg"/>
+   <img src="goal.png"/>
  
 # 3. 프로젝트 결과
 
 ## 발표 ppt 
-   <img src="project.jpg"/>[발표자료](/project.pptx)<br>
+   <img src="project.jpg"/>[발표자료](/프로젝트.pdf)<br>
 
 ## 시연 동영상 
 
