@@ -14,7 +14,7 @@
 
 # 2. 프로젝트 목표
 
-   <img src="goal.png"/>
+   <img src="goal.PNG"/>
  
 # 3. 프로젝트 결과
 
