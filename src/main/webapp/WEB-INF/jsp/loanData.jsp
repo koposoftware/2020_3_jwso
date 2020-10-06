@@ -280,7 +280,7 @@ window.onload = function(){
 <script src="//developers.kakao.com/sdk/js/kakao.min.js"></script>
 <script>
 
-Kakao.init('19e071d44bf3bd6a7c39cbc2e56b27d8');
+Kakao.init('<!--키-->');
 
 function sendTo() {
 	Kakao.Auth.login({
