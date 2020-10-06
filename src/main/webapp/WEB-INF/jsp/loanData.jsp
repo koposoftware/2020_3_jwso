@@ -280,7 +280,8 @@ window.onload = function(){
 <script src="//developers.kakao.com/sdk/js/kakao.min.js"></script>
 <script>
 
-Kakao.init('<!--키-->');
+Kakao.init('19e071d44bf3bd6a7c39cbc2e56b27d8');
+
 function sendTo() {
 	Kakao.Auth.login({
 		// 로그인 할 때 요청할 Scope
