@@ -16,17 +16,13 @@
  형태를 경험해보고자 하였고, 빅데이터를 핸들링했을 때의 
  어려움을 직접 겪어보고 극복하는 학습을 목표로 삼았습니다. 
 
-# 2. 프로젝트 제안서
-
-프로젝트 제안서를 설명하세요. 발표자료와 동영상을 추가하세요. 시스템의 아키텍쳐 설명도 추가하세요.
-
-   <img src="ppt.jpg"/>[발표자료](/project.pptx)<br>
+# 2. 프로젝트 목표
+   <img src="goal.PNG"/><br>
 
 # 3. 프로젝트 결과
-프로젝트 결과를 추가하세요. 발표자료. 시연동영상을 추가하세요.
 
 ## 발표 ppt 
-   <img src="ppt.jpg"/>[발표자료](/project.pptx)<br>
+   <img src="project.jpg"/>[발표자료](/프로젝트.pdf)<br>
 
 ## 시연 동영상 
 
@@ -36,7 +32,7 @@
 
 본인 소개를 추가하세요
 
-|이름 |소재원|![gdKO](/gdko.jpg)|
+|이름 |소재원|![picc](/picc.jpg)|
 |연락처 | 2060340004(@)kopo.ac.kr|
 |skill set| Frontend - HTML, CSS, Javascript, Jquery|
 | | Backend - Java, Spring, Oracle |
